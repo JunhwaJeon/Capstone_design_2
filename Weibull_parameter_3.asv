@@ -1,0 +1,46 @@
+clear all; close all; clc;
+
+iid_weibull_moment_124=zeros(3,15);
+
+for i=1:15
+    iid_weibull_moment_124(1,i)=computeExpectationR(1, 2*i+2);
+    iid_weibull_moment_124(2,i)=computeExpectationR(2, 2*i+2);
+    iid_weibull_moment_124(3,i)=computeExpectationR(4, 2*i+2);
+end
+
+save('iid_weibull_moment.mat',"iid_weibull_moment_124");
+
+%% Parameters only dependes on the number of receive antennas
+function E_R_n = computeExpectationR(n, Nr)
+
+    E_R_n=0;
+    all_combinations=partition_set(Nr, n);
+
+    for j=1:length(all_combinations(:,1))
+        all_combinations(j,:)=sort(all_combinations(j,:));
+    end
+    for j=1:length(all_combinations(:,1))
+        vector=sort(all_combinations(j,:),'descend');
+        part=0;
+        for k=1:length(vector)-1
+            part=part*nchoosek(vector(k),vector(k+1))*gamma(1+(vector(k)-vector(k+1)));
+        end
+        E_R_n=E_R_n+part;
+    end
+    
+    % Partition calculation function
+    function partitions = partition_set(n, k)
+        % n개의 항을 k개의 슬롯으로 분배하는 모든 조합을 찾습니다.
+        if k == 1
+            partitions = n; % 남은 하나의 슬롯에 남은 n 값을 넣기
+        else
+            partitions = [];
+            for i = 0:n
+                % i는 현재 슬롯에 할당될 값, 남은 값은 (n-i)를 나머지 슬롯에 할당
+                sub_partitions = partition_set(n-i, k-1);
+                partitions = [partitions; [i * ones(size(sub_partitions, 1), 1), sub_partitions]];
+            end
+        end
+    end
+
+end

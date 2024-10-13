@@ -1,7 +1,7 @@
 close all; clear; clc;
 syms mu k
 
-iid_weibull_moment=load('iid_weibull_moment.mat').iid_weibull_moment_124;
+iid_weibull_moment=load('iid_weibull_moment_rev1.mat').iid_weibull_moment_124;
 weibull_sum_mu_k=zeros(2,length(iid_weibull_moment(1,:)));
 
 for i=1:length(iid_weibull_moment(1,:))
@@ -9,7 +9,7 @@ for i=1:length(iid_weibull_moment(1,:))
     eq2 = 2*gammaln(mu+2/k) - gammaln(mu+4/k) - gammaln(mu) == 2*log(iid_weibull_moment(2,i)) - log(iid_weibull_moment(3,i));
 
     % Provide initial guesses for mu and k
-    initial_guess = [1, 1];  % Adjust the initial guess as necessary
+    initial_guess = [1,1];  % Adjust the initial guess as necessary
     
     % Solve the system numerically with initial guesses
     [mu_sol, k_sol] = vpasolve([eq1, eq2], [mu, k], initial_guess);
