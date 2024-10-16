@@ -3,13 +3,12 @@ clc;
 
 %%파라미터 설정
 T_SNR_dB=10; %SNR 범위 설정
-T_SNR=10.^(T_SNR_dB/10); %linear 스케일 SNR설정
+T_SNR=10.^(T_SNR_dB/10); %linear 스케일 SNR설정Line 6 T_SNR_linear=10.^(T_SNR_dB/10); %linear 스케일 SNR설정
 N_iter=1000; %반복 횟수 (Ergodic capacity 구하기 위해서) 
 sq2 = sqrt(0.5); %상수 지정
 nT=32; 
-nR=4:2:32; %MIMO Scale 지정
+nR=[4:1:32]; %MIMO Scale 지정
 q_gain=0;
-iid_weibull_moment=load('iid_weibull_moment.mat').iid_weibull_moment_124;
 
 R_candi=linspace(0,0,nT); %Maximum 선택 위한 후보값 담을 행렬(벡터) 지정
 R(:,:) = zeros(3,length(nR));%Capacity 정보 담을 행렬 지정 (안테나 경우*SNR 범위)
@@ -49,16 +48,16 @@ for i=1:length(nR)
         end
 
         G = @(z) exp(-z) .* (z.^nR(i)) .* (( gammainc(z, nR(i), 'lower')).^(nT - 1));
-        G_q = @(z) ((2 * gamma(1+nR(i))) / (gamma(weibull_sum_parameter(1,i) + 1 / weibull_sum_parameter(2,i)))) ...
-            .* exp(-z) .* (z.^(weibull_sum_parameter(1,i) + 1 / weibull_sum_parameter(2,i) - 1)) ...
-            .* (( gammainc(z, weibull_sum_parameter(1,i), 'lower')).^(nT - 1));
+        num_G_Q=@(x, z) z.*exp(-z.*x).*x^(weibull_sum_parameter(1,i)+1/weibull_sum_parameter(2,i)); 
+        G_q = @(z) (2 * gamma(1+nR(i))) .* exp(-z)./ integral(@(x) num_G_Q, 0,  Inf, 'RelTol', 1e-12, 'AbsTol', 1e-12);
+            
         num_func=@(z) exp(-z) .* (z.^(nR(i)+1)) .* (( gammainc(z, nR(i), 'lower')).^(nT - 1));
 
         numerator=T_SNR*(1-beta)*quadgk(num_func, 0,  Inf, 'RelTol', 1e-12, 'AbsTol', 1e-12);
         gaussian_noise=quadgk(@(z) G(z), 0,  Inf, 'RelTol', 1e-12, 'AbsTol', 1e-12);
         quantization_noise=T_SNR*beta*quadgk(@(z) G_q(z), 0,  Inf, 'RelTol', 1e-20, 'AbsTol', 1e-20);
         if isnan(quantization_noise)
-            denominator=gaussian_noise+2*T_SNR*beta*gamma(nR(i)+1);
+            denominator=gaussian_noise;%+2*T_SNR*beta*gamma(nR(i)+1);
         else
             denominator=gaussian_noise+quantization_noise;
         end
